@@ -1,11 +1,14 @@
-import { useState } from 'react';
-import { UsersRound, Video, Calendar, Clock, User, Phone, Plus, VideoIcon, MessageSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { UsersRound, Video, Calendar, Clock, User, Phone, Plus, VideoIcon, MessageSquare, Check, X, CheckCircle, XCircle } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import PageHeader from '@/components/PageHeader';
 import DataCard from '@/components/DataCard';
 import Card from '@/components/Card';
 import Tabs from '@/components/Tabs';
 import StatusBadge from '@/components/StatusBadge';
+import Modal from '@/components/Modal';
+import { Input, Select, Textarea, Button, NumberInput } from '@/components/Form';
 
 const tabs = [
   { key: 'visit', label: '会见管理' },
@@ -14,12 +17,93 @@ const tabs = [
 ];
 
 export default function Family() {
-  const { familyVisits } = useStore();
+  const location = useLocation();
+  const { familyVisits, videoRecords, inmates, updateFamilyVisit, addVideoRecord } = useStore();
   const [activeTab, setActiveTab] = useState('visit');
+  const [filteredInmateId, setFilteredInmateId] = useState<string | null>(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [editingVisit, setEditingVisit] = useState<any>(null);
+  const [videoFormData, setVideoFormData] = useState({
+    visitId: '',
+    inmateId: '',
+    inmateName: '',
+    visitorName: '',
+    relationship: '',
+    date: new Date().toISOString().split('T')[0],
+    startTime: '09:00',
+    endTime: '09:30',
+    duration: 30,
+    notes: '',
+  });
 
-  const visitCount = familyVisits.filter((v) => v.visitType === '现场会见').length;
-  const videoCount = familyVisits.filter((v) => v.visitType === '视频会见').length;
-  const confirmedCount = familyVisits.filter((v) => v.status === '已确认').length;
+  useEffect(() => {
+    if (location.state?.inmateId) {
+      setFilteredInmateId(location.state.inmateId);
+    }
+  }, [location.state]);
+
+  const filteredVisits = filteredInmateId
+    ? familyVisits.filter((v) => v.inmateId === filteredInmateId)
+    : familyVisits;
+
+  const filteredVideoRecords = filteredInmateId
+    ? videoRecords.filter((v) => v.inmateId === filteredInmateId)
+    : videoRecords;
+
+  const visitCount = filteredVisits.filter((v) => v.visitType === '现场会见').length;
+  const videoCount = filteredVisits.filter((v) => v.visitType === '视频会见').length;
+  const pendingCount = filteredVisits.filter((v) => v.status === '待确认').length;
+  const confirmedCount = filteredVisits.filter((v) => v.status === '已确认').length;
+
+  const handleConfirmVisit = (visitId: string) => {
+    updateFamilyVisit(visitId, { status: '已确认' });
+  };
+
+  const handleCancelVisit = (visitId: string) => {
+    updateFamilyVisit(visitId, { status: '已取消' });
+  };
+
+  const handleOpenVideoRecord = (visit: any) => {
+    setEditingVisit(visit);
+    setVideoFormData({
+      visitId: visit.id,
+      inmateId: visit.inmateId,
+      inmateName: visit.inmateName,
+      visitorName: visit.visitorName,
+      relationship: visit.relationship,
+      date: visit.date,
+      startTime: visit.timeSlot.split('-')[0],
+      endTime: visit.timeSlot.split('-')[1],
+      duration: visit.duration || 30,
+      notes: '',
+    });
+    setShowVideoModal(true);
+  };
+
+  const handleSaveVideoRecord = () => {
+    if (!videoFormData.duration || !videoFormData.notes) {
+      alert('请填写完整的视频帮教记录');
+      return;
+    }
+
+    addVideoRecord({
+      visitId: videoFormData.visitId,
+      inmateId: videoFormData.inmateId,
+      inmateName: videoFormData.inmateName,
+      visitorName: videoFormData.visitorName,
+      relationship: videoFormData.relationship,
+      date: videoFormData.date,
+      startTime: videoFormData.startTime,
+      endTime: videoFormData.endTime,
+      duration: videoFormData.duration,
+      notes: videoFormData.notes,
+    });
+
+    updateFamilyVisit(videoFormData.visitId, { status: '已完成', duration: videoFormData.duration });
+
+    setShowVideoModal(false);
+    setEditingVisit(null);
+  };
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -53,10 +137,25 @@ export default function Family() {
         title="亲情帮教"
         subtitle="亲情会见、视频帮教与家属沟通管理"
         actions={
-          <button className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-            <Plus className="w-4 h-4" />
-            预约会见
-          </button>
+          <div className="flex items-center gap-3">
+            {filteredInmateId && (
+              <span className="text-sm text-gray-500">
+                正在查看：{inmates.find((i) => i.id === filteredInmateId)?.name} 的帮教记录
+              </span>
+            )}
+            {filteredInmateId && (
+              <button
+                onClick={() => setFilteredInmateId(null)}
+                className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                清除筛选
+              </button>
+            )}
+            <button className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+              <Plus className="w-4 h-4" />
+              预约会见
+            </button>
+          </div>
         }
       />
 
@@ -84,8 +183,8 @@ export default function Family() {
         />
         <DataCard
           title="待确认"
-          value={confirmedCount}
-          subtitle="条预约"
+          value={pendingCount}
+          subtitle="条预约待审批"
           icon={<Clock className="w-5 h-5" />}
           color="purple"
         />
@@ -162,7 +261,7 @@ export default function Family() {
             <div className="mt-8">
               <h4 className="font-semibold text-gray-900 mb-4">最近会见记录</h4>
               <div className="space-y-3">
-                {familyVisits.map((visit) => (
+                {filteredVisits.map((visit) => (
                   <div key={visit.id} className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 transition-colors">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
@@ -187,8 +286,41 @@ export default function Family() {
                           </p>
                         </div>
                       </div>
-                      <StatusBadge status={visit.status} variant={getStatusVariant(visit.status) as any} size="md" />
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={visit.status} variant={getStatusVariant(visit.status) as any} size="md" />
+                        {visit.status === '待确认' && (
+                          <div className="flex items-center gap-1 ml-2">
+                            <button
+                              onClick={() => handleConfirmVisit(visit.id)}
+                              className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
+                              title="确认"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleCancelVisit(visit.id)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title="取消"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
+                        {visit.status === '已确认' && visit.visitType === '视频会见' && (
+                          <button
+                            onClick={() => handleOpenVideoRecord(visit)}
+                            className="ml-2 px-2 py-1 text-xs bg-blue-50 text-blue-600 rounded hover:bg-blue-100 transition-colors"
+                          >
+                            完成记录
+                          </button>
+                        )}
+                      </div>
                     </div>
+                    {visit.notes && (
+                      <p className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100">
+                        备注：{visit.notes}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -230,24 +362,27 @@ export default function Family() {
             <div className="border-t border-gray-100 pt-5">
               <h4 className="font-semibold text-gray-900 mb-4">视频帮教记录</h4>
               <div className="space-y-2">
-                {familyVisits.filter((v) => v.visitType === '视频会见').concat([
-                  { id: 'fv6', inmateName: '孙磊', visitorName: '孙母', relationship: '母亲', date: '2024-01-10', timeSlot: '15:00-15:30', status: '已完成' as const, duration: 28 },
-                  { id: 'fv7', inmateName: '赵强', visitorName: '赵父', relationship: '父亲', date: '2024-01-09', timeSlot: '10:00-10:30', status: '已完成' as const, duration: 30 },
-                ]).map((visit: any) => (
-                  <div key={visit.id} className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                {filteredVideoRecords.slice(0, 6).map((record) => (
+                  <div key={record.id} className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
                       <VideoIcon className="w-5 h-5 text-blue-500" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{visit.inmateName} ↔ {visit.visitorName}</p>
-                        <p className="text-xs text-gray-500">{visit.date} {visit.timeSlot}</p>
+                        <p className="text-sm font-medium text-gray-900">{record.inmateName} ↔ {record.visitorName}</p>
+                        <p className="text-xs text-gray-500">{record.date} {record.startTime}-{record.endTime}</p>
+                        {record.notes && (
+                          <p className="text-xs text-gray-400 mt-0.5">备注：{record.notes}</p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-600">{visit.duration}分钟</p>
-                      <StatusBadge status={visit.status} variant={getStatusVariant(visit.status) as any} />
+                      <p className="text-sm text-gray-600">{record.duration}分钟</p>
+                      <StatusBadge status="已完成" variant="info" />
                     </div>
                   </div>
                 ))}
+                {filteredVideoRecords.length === 0 && (
+                  <p className="text-center text-gray-400 py-8 text-sm">暂无视频帮教记录</p>
+                )}
               </div>
             </div>
           </div>
@@ -286,6 +421,79 @@ export default function Family() {
           </div>
         )}
       </Card>
+
+      <Modal
+        isOpen={showVideoModal}
+        onClose={() => setShowVideoModal(false)}
+        title="视频帮教完成记录"
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowVideoModal(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSaveVideoRecord}>
+              <Check className="w-4 h-4" />
+              保存记录
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-gray-500">服刑人员：</span>
+                <span className="font-medium text-gray-900">{videoFormData.inmateName}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">家属：</span>
+                <span className="font-medium text-gray-900">{videoFormData.visitorName}({videoFormData.relationship})</span>
+              </div>
+              <div>
+                <span className="text-gray-500">会见日期：</span>
+                <span className="font-medium text-gray-900">{videoFormData.date}</span>
+              </div>
+              <div>
+                <span className="text-gray-500">时间段：</span>
+                <span className="font-medium text-gray-900">{videoFormData.startTime}-{videoFormData.endTime}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="开始时间"
+              type="time"
+              value={videoFormData.startTime}
+              onChange={(e) => setVideoFormData({ ...videoFormData, startTime: e.target.value })}
+            />
+            <Input
+              label="结束时间"
+              type="time"
+              value={videoFormData.endTime}
+              onChange={(e) => setVideoFormData({ ...videoFormData, endTime: e.target.value })}
+            />
+          </div>
+
+          <NumberInput
+            label="实际时长（分钟）"
+            required
+            min={1}
+            value={videoFormData.duration}
+            onChange={(e) => setVideoFormData({ ...videoFormData, duration: parseInt(e.target.value) || 0 })}
+            placeholder="请输入实际视频时长"
+          />
+
+          <Textarea
+            label="帮教备注"
+            required
+            value={videoFormData.notes}
+            onChange={(e) => setVideoFormData({ ...videoFormData, notes: e.target.value })}
+            placeholder="请记录本次视频帮教的主要内容、沟通情况等"
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -1,11 +1,14 @@
-import { useState } from 'react';
-import { ClipboardCheck, Award, AlertTriangle, TrendingUp, User, Calendar, Plus } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
+import { ClipboardCheck, Award, AlertTriangle, TrendingUp, User, Calendar, Plus, Check, X } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import PageHeader from '@/components/PageHeader';
 import DataCard from '@/components/DataCard';
 import Card from '@/components/Card';
 import Tabs from '@/components/Tabs';
 import StatusBadge from '@/components/StatusBadge';
+import Modal from '@/components/Modal';
+import { Button, Textarea } from '@/components/Form';
 
 const tabs = [
   { key: 'daily', label: '日常打分' },
@@ -14,13 +17,82 @@ const tabs = [
 ];
 
 export default function Behavior() {
-  const { behaviorRecords, violations } = useStore();
+  const location = useLocation();
+  const { behaviorRecords, violations, getBehaviorRecordsByDate, getAvgBehaviorScoreByDate, addBehaviorRecord, inmates } = useStore();
   const [activeTab, setActiveTab] = useState('daily');
   const [selectedDate, setSelectedDate] = useState('2024-01-15');
+  const [filteredInmateId, setFilteredInmateId] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [editScores, setEditScores] = useState({ discipline: 0, labor: 0, study: 0, cooperation: 0, remark: '' });
 
-  const avgScore = (behaviorRecords.reduce((sum, r) => sum + r.totalScore, 0) / behaviorRecords.length).toFixed(1);
-  const excellentCount = behaviorRecords.filter((r) => r.totalScore >= 36).length;
+  const recordsByDate = useMemo(() => getBehaviorRecordsByDate(selectedDate), [selectedDate, getBehaviorRecordsByDate]);
+  
+  const filteredRecords = filteredInmateId
+    ? recordsByDate.filter((r) => r.inmateId === filteredInmateId)
+    : recordsByDate;
+
+  const avgScore = useMemo(() => getAvgBehaviorScoreByDate(selectedDate).toFixed(1), [selectedDate, getAvgBehaviorScoreByDate]);
+  const excellentCount = filteredRecords.filter((r) => r.totalScore >= 36).length;
   const violationCount = violations.length;
+
+  useMemo(() => {
+    if (location.state?.inmateId) {
+      setFilteredInmateId(location.state.inmateId);
+    }
+  }, [location.state]);
+
+  const handleOpenEdit = (record: any) => {
+    setEditingRecord(record);
+    setEditScores({
+      discipline: record.discipline,
+      labor: record.labor,
+      study: record.study,
+      cooperation: record.cooperation,
+      remark: record.remark === '待评分' ? '' : record.remark,
+    });
+    setShowModal(true);
+  };
+
+  const handleSaveScore = () => {
+    if (!editingRecord) return;
+
+    const totalScore = editScores.discipline + editScores.labor + editScores.study + editScores.cooperation;
+
+    if (editingRecord.id.startsWith('temp-')) {
+      addBehaviorRecord({
+        inmateId: editingRecord.inmateId,
+        inmateName: editingRecord.inmateName,
+        date: selectedDate,
+        discipline: editScores.discipline,
+        labor: editScores.labor,
+        study: editScores.study,
+        cooperation: editScores.cooperation,
+        totalScore,
+        remark: editScores.remark || '已评分',
+      });
+    } else {
+      const { updateBehaviorRecord } = useStore.getState() as any;
+      if (updateBehaviorRecord) {
+        updateBehaviorRecord(editingRecord.id, {
+          discipline: editScores.discipline,
+          labor: editScores.labor,
+          study: editScores.study,
+          cooperation: editScores.cooperation,
+          totalScore,
+          remark: editScores.remark,
+        });
+      }
+    }
+
+    setShowModal(false);
+    setEditingRecord(null);
+  };
+
+  const handleScoreChange = (field: string, value: string) => {
+    const numValue = Math.min(10, Math.max(0, parseInt(value) || 0));
+    setEditScores((prev) => ({ ...prev, [field]: numValue }));
+  };
 
   const getScoreColor = (score: number) => {
     if (score >= 36) return 'text-green-600';
@@ -67,10 +139,21 @@ export default function Behavior() {
         title="行为考核"
         subtitle="日常行为评分、违规处理与奖惩记录管理"
         actions={
-          <button className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-            <Plus className="w-4 h-4" />
-            新增记录
-          </button>
+          <div className="flex items-center gap-3">
+            {filteredInmateId && (
+              <span className="text-sm text-gray-500">
+                正在查看：{inmates.find((i) => i.id === filteredInmateId)?.name} 的评分记录
+              </span>
+            )}
+            {filteredInmateId && (
+              <button
+                onClick={() => setFilteredInmateId(null)}
+                className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                清除筛选
+              </button>
+            )}
+          </div>
         }
       />
 
@@ -140,26 +223,47 @@ export default function Behavior() {
                       </tr>
                     </thead>
                     <tbody>
-                      {behaviorRecords.map((record) => (
-                        <tr key={record.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
+                      {filteredRecords.map((record) => (
+                        <tr
+                          key={record.id}
+                          className="border-b border-gray-50 last:border-0 hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => handleOpenEdit(record)}
+                        >
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                <User className="w-4 h-4 text-blue-600" />
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                record.remark === '待评分' ? 'bg-yellow-100' : 'bg-blue-100'
+                              }`}>
+                                <User className={`w-4 h-4 ${record.remark === '待评分' ? 'text-yellow-600' : 'text-blue-600'}`} />
                               </div>
-                              <span className="text-sm font-medium text-gray-900">{record.inmateName}</span>
+                              <div>
+                                <span className="text-sm font-medium text-gray-900">{record.inmateName}</span>
+                                {record.remark === '待评分' && (
+                                  <span className="ml-2 text-xs text-yellow-600">（点击评分）</span>
+                                )}
+                              </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-center text-sm font-medium">{record.discipline}</td>
-                          <td className="px-4 py-3 text-center text-sm font-medium">{record.labor}</td>
-                          <td className="px-4 py-3 text-center text-sm font-medium">{record.study}</td>
-                          <td className="px-4 py-3 text-center text-sm font-medium">{record.cooperation}</td>
+                          <td className="px-4 py-3 text-center text-sm font-medium">
+                            {record.discipline > 0 ? record.discipline : <span className="text-gray-300">-</span>}
+                          </td>
+                          <td className="px-4 py-3 text-center text-sm font-medium">
+                            {record.labor > 0 ? record.labor : <span className="text-gray-300">-</span>}
+                          </td>
+                          <td className="px-4 py-3 text-center text-sm font-medium">
+                            {record.study > 0 ? record.study : <span className="text-gray-300">-</span>}
+                          </td>
+                          <td className="px-4 py-3 text-center text-sm font-medium">
+                            {record.cooperation > 0 ? record.cooperation : <span className="text-gray-300">-</span>}
+                          </td>
                           <td className="px-4 py-3 text-center">
                             <span className={`text-lg font-bold ${getScoreColor(record.totalScore)}`}>
-                              {record.totalScore}
+                              {record.totalScore > 0 ? record.totalScore : <span className="text-gray-300">-</span>}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-500">{record.remark}</td>
+                          <td className="px-4 py-3 text-sm text-gray-500">
+                            {record.remark === '待评分' ? <span className="text-yellow-500">待评分</span> : record.remark}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -293,6 +397,97 @@ export default function Behavior() {
           </Card>
         </div>
       </div>
+
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={`${editingRecord?.inmateName} - ${selectedDate} 行为评分`}
+        size="md"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSaveScore}>
+              <Check className="w-4 h-4" />
+              保存评分
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                遵规守纪（0-10分）
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={10}
+                value={editScores.discipline}
+                onChange={(e) => handleScoreChange('discipline', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                劳动表现（0-10分）
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={10}
+                value={editScores.labor}
+                onChange={(e) => handleScoreChange('labor', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                学习态度（0-10分）
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={10}
+                value={editScores.study}
+                onChange={(e) => handleScoreChange('study', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                团结互助（0-10分）
+              </label>
+              <input
+                type="number"
+                min={0}
+                max={10}
+                value={editScores.cooperation}
+                onChange={(e) => handleScoreChange('cooperation', e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+          </div>
+
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-700">总分（40分）</span>
+              <span className={`text-2xl font-bold ${getScoreColor(editScores.discipline + editScores.labor + editScores.study + editScores.cooperation)}`}>
+                {editScores.discipline + editScores.labor + editScores.study + editScores.cooperation}
+              </span>
+            </div>
+          </div>
+
+          <Textarea
+            label="备注"
+            value={editScores.remark}
+            onChange={(e) => setEditScores((prev) => ({ ...prev, remark: e.target.value }))}
+            placeholder="请输入评分备注（可选）"
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

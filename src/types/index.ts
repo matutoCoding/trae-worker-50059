@@ -25,12 +25,14 @@ export interface Course {
   schedule: string;
   location: string;
   participantCount: number;
+  participantIds: string[];
 }
 
 export interface CourseHour {
   id: string;
   courseId: string;
   courseName: string;
+  inmateId: string;
   inmateName: string;
   date: string;
   hours: number;
@@ -48,6 +50,20 @@ export interface Training {
   description: string;
   progress: number;
   traineeCount: number;
+  traineeIds: string[];
+}
+
+export interface TrainingRecord {
+  id: string;
+  trainingId: string;
+  trainingName: string;
+  inmateId: string;
+  inmateName: string;
+  startDate: string;
+  progress: number;
+  score?: number;
+  passed?: boolean;
+  certificateDate?: string;
 }
 
 export interface Assessment {
@@ -111,6 +127,21 @@ export interface FamilyVisit {
   status: '待确认' | '已确认' | '已完成' | '已取消';
   duration: number;
   room?: string;
+  notes?: string;
+}
+
+export interface VideoRecord {
+  id: string;
+  visitId?: string;
+  inmateId: string;
+  inmateName: string;
+  visitorName: string;
+  relationship: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  notes: string;
 }
 
 export interface ReleaseAssessment {
@@ -146,4 +177,16 @@ export interface StatsCard {
   change?: string;
   icon: string;
   color: string;
+}
+
+export interface InmateProfileStats {
+  totalCourseHours: number;
+  completedCourses: number;
+  activeTrainings: number;
+  completedTrainings: number;
+  latestPsychologyLevel: string;
+  avgBehaviorScore: number;
+  totalFamilyVisits: number;
+  hasReleaseAssessment: boolean;
+  releaseAssessmentResult?: string;
 }

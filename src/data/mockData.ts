@@ -3,16 +3,18 @@ import {
   Course,
   CourseHour,
   Training,
+  TrainingRecord,
   Assessment,
   CrisisIntervention,
   BehaviorRecord,
   Violation,
   FamilyVisit,
+  VideoRecord,
   ReleaseAssessment,
-  JobOpportunity
+  JobOpportunity,
 } from '@/types';
 
-export const inmates: Inmate[] = [
+export const initialInmates: Inmate[] = [
   {
     id: '1',
     name: '张伟',
@@ -135,7 +137,7 @@ export const inmates: Inmate[] = [
   },
 ];
 
-export const courses: Course[] = [
+export const initialCourses: Course[] = [
   {
     id: 'c1',
     name: '思想道德修养',
@@ -146,6 +148,7 @@ export const courses: Course[] = [
     schedule: '周一、三、五 上午',
     location: '教育楼101室',
     participantCount: 35,
+    participantIds: ['1', '2', '4', '7'],
   },
   {
     id: 'c2',
@@ -157,6 +160,7 @@ export const courses: Course[] = [
     schedule: '周二、四 下午',
     location: '教育楼102室',
     participantCount: 42,
+    participantIds: ['1', '3', '5', '8'],
   },
   {
     id: 'c3',
@@ -168,6 +172,7 @@ export const courses: Course[] = [
     schedule: '周一至周五 下午',
     location: '教育楼201室',
     participantCount: 28,
+    participantIds: ['4', '7'],
   },
   {
     id: 'c4',
@@ -179,6 +184,7 @@ export const courses: Course[] = [
     schedule: '周六 上午',
     location: '多功能厅',
     participantCount: 50,
+    participantIds: ['1', '2', '3', '4', '5', '6', '7', '8'],
   },
   {
     id: 'c5',
@@ -190,6 +196,7 @@ export const courses: Course[] = [
     schedule: '周三 下午',
     location: '心理咨询中心',
     participantCount: 30,
+    participantIds: ['3', '5', '7'],
   },
   {
     id: 'c6',
@@ -201,19 +208,20 @@ export const courses: Course[] = [
     schedule: '周二、四 上午',
     location: '教育楼202室',
     participantCount: 22,
+    participantIds: ['4', '7'],
   },
 ];
 
-export const courseHours: CourseHour[] = [
-  { id: 'h1', courseId: 'c1', courseName: '思想道德修养', inmateName: '张伟', date: '2024-01-15', hours: 2, status: '已完成', score: 85 },
-  { id: 'h2', courseId: 'c1', courseName: '思想道德修养', inmateName: '李明', date: '2024-01-15', hours: 2, status: '已完成', score: 90 },
-  { id: 'h3', courseId: 'c2', courseName: '法律基础知识', inmateName: '王芳', date: '2024-01-16', hours: 2, status: '已完成', score: 88 },
-  { id: 'h4', courseId: 'c3', courseName: '文化课扫盲班', inmateName: '赵强', date: '2024-01-16', hours: 3, status: '进行中' },
-  { id: 'h5', courseId: 'c4', courseName: '爱国主义教育', inmateName: '陈静', date: '2024-01-17', hours: 2, status: '未开始' },
-  { id: 'h6', courseId: 'c1', courseName: '思想道德修养', inmateName: '孙磊', date: '2024-01-17', hours: 2, status: '已完成', score: 75 },
+export const initialCourseHours: CourseHour[] = [
+  { id: 'h1', courseId: 'c1', courseName: '思想道德修养', inmateId: '1', inmateName: '张伟', date: '2024-01-15', hours: 2, status: '已完成', score: 85 },
+  { id: 'h2', courseId: 'c1', courseName: '思想道德修养', inmateId: '2', inmateName: '李明', date: '2024-01-15', hours: 2, status: '已完成', score: 90 },
+  { id: 'h3', courseId: 'c2', courseName: '法律基础知识', inmateId: '3', inmateName: '王芳', date: '2024-01-16', hours: 2, status: '已完成', score: 88 },
+  { id: 'h4', courseId: 'c3', courseName: '文化课扫盲班', inmateId: '4', inmateName: '赵强', date: '2024-01-16', hours: 3, status: '进行中' },
+  { id: 'h5', courseId: 'c4', courseName: '爱国主义教育', inmateId: '5', inmateName: '陈静', date: '2024-01-17', hours: 2, status: '未开始' },
+  { id: 'h6', courseId: 'c1', courseName: '思想道德修养', inmateId: '7', inmateName: '孙磊', date: '2024-01-17', hours: 2, status: '已完成', score: 75 },
 ];
 
-export const trainings: Training[] = [
+export const initialTrainings: Training[] = [
   {
     id: 't1',
     name: '电工技能培训',
@@ -224,6 +232,7 @@ export const trainings: Training[] = [
     description: '学习电路基础、安全用电、简单电器维修等技能',
     progress: 65,
     traineeCount: 18,
+    traineeIds: ['1', '4', '7'],
   },
   {
     id: 't2',
@@ -235,6 +244,7 @@ export const trainings: Training[] = [
     description: '汽车保养、故障诊断、基本维修技能培训',
     progress: 45,
     traineeCount: 12,
+    traineeIds: ['1', '7'],
   },
   {
     id: 't3',
@@ -246,6 +256,7 @@ export const trainings: Training[] = [
     description: '中式烹饪基础、食品安全、营养配餐等',
     progress: 80,
     traineeCount: 20,
+    traineeIds: ['2', '3', '5'],
   },
   {
     id: 't4',
@@ -257,6 +268,7 @@ export const trainings: Training[] = [
     description: 'Word、Excel、PPT等办公软件操作',
     progress: 90,
     traineeCount: 25,
+    traineeIds: ['2', '3', '8'],
   },
   {
     id: 't5',
@@ -268,6 +280,7 @@ export const trainings: Training[] = [
     description: '手工电弧焊、气割技术、安全操作规范',
     progress: 55,
     traineeCount: 15,
+    traineeIds: ['2', '4'],
   },
   {
     id: 't6',
@@ -279,10 +292,19 @@ export const trainings: Training[] = [
     description: '基础理发、美容护理、形象设计入门',
     progress: 30,
     traineeCount: 10,
+    traineeIds: ['5', '8'],
   },
 ];
 
-export const assessments: Assessment[] = [
+export const initialTrainingRecords: TrainingRecord[] = [
+  { id: 'tr1', trainingId: 't1', trainingName: '电工技能培训', inmateId: '1', inmateName: '张伟', startDate: '2023-10-01', progress: 75, score: 85, passed: true },
+  { id: 'tr2', trainingId: 't4', trainingName: '计算机办公应用', inmateId: '2', inmateName: '李明', startDate: '2023-11-01', progress: 95, score: 92, passed: true },
+  { id: 'tr3', trainingId: 't3', trainingName: '烹饪技能培训', inmateId: '3', inmateName: '王芳', startDate: '2023-09-15', progress: 85, score: 78, passed: true },
+  { id: 'tr4', trainingId: 't5', trainingName: '电焊技术', inmateId: '4', inmateName: '赵强', startDate: '2023-12-01', progress: 45, score: 58, passed: false },
+  { id: 'tr5', trainingId: 't4', trainingName: '计算机办公应用', inmateId: '8', inmateName: '周琳', startDate: '2023-11-15', progress: 90, score: 88, passed: true },
+];
+
+export const initialAssessments: Assessment[] = [
   { id: 'a1', inmateId: '1', inmateName: '张伟', type: '常规测评', date: '2024-01-10', score: 72, level: '轻度', counselor: '陈医师', notes: '存在轻度焦虑情绪，建议定期心理咨询' },
   { id: 'a2', inmateId: '2', inmateName: '李明', type: '常规测评', date: '2024-01-10', score: 85, level: '正常', counselor: '陈医师', notes: '心理状态良好，适应改造生活' },
   { id: 'a3', inmateId: '3', inmateName: '王芳', type: '危机评估', date: '2024-01-05', score: 55, level: '中度', counselor: '李医师', notes: '中度抑郁倾向，需重点关注和干预' },
@@ -291,29 +313,33 @@ export const assessments: Assessment[] = [
   { id: 'a6', inmateId: '7', inmateName: '孙磊', type: '危机评估', date: '2024-01-15', score: 45, level: '重度', counselor: '王医师', notes: '重度情绪低落，有自伤倾向，需立即干预' },
 ];
 
-export const crisisInterventions: CrisisIntervention[] = [
+export const initialCrisisInterventions: CrisisIntervention[] = [
   { id: 'ci1', inmateId: '3', inmateName: '王芳', date: '2024-01-05', level: '严重', description: '情绪低落，拒绝进食，有轻生念头', measures: '24小时监护，心理咨询，药物治疗', status: '跟踪中', counselor: '李医师' },
   { id: 'ci2', inmateId: '7', inmateName: '孙磊', date: '2024-01-15', level: '紧急', description: '与同改发生冲突，情绪失控，有暴力倾向', measures: '单独关押，心理疏导，危机干预', status: '处理中', counselor: '王医师' },
   { id: 'ci3', inmateId: '5', inmateName: '陈静', date: '2024-01-08', level: '一般', description: '焦虑失眠，改造状态消极', measures: '心理咨询，调整作息，增加文体活动', status: '已处理', counselor: '陈医师' },
 ];
 
-export const behaviorRecords: BehaviorRecord[] = [
+export const initialBehaviorRecords: BehaviorRecord[] = [
   { id: 'b1', inmateId: '1', inmateName: '张伟', date: '2024-01-15', discipline: 9, labor: 8, study: 7, cooperation: 8, totalScore: 32, remark: '表现良好' },
   { id: 'b2', inmateId: '2', inmateName: '李明', date: '2024-01-15', discipline: 10, labor: 9, study: 9, cooperation: 9, totalScore: 37, remark: '表现优秀' },
   { id: 'b3', inmateId: '3', inmateName: '王芳', date: '2024-01-15', discipline: 7, labor: 6, study: 8, cooperation: 6, totalScore: 27, remark: '需加强劳动积极性' },
   { id: 'b4', inmateId: '4', inmateName: '赵强', date: '2024-01-15', discipline: 8, labor: 9, study: 6, cooperation: 8, totalScore: 31, remark: '学习积极性有待提高' },
   { id: 'b5', inmateId: '5', inmateName: '陈静', date: '2024-01-15', discipline: 8, labor: 7, study: 8, cooperation: 7, totalScore: 30, remark: '表现一般' },
   { id: 'b6', inmateId: '8', inmateName: '周琳', date: '2024-01-15', discipline: 9, labor: 8, study: 9, cooperation: 8, totalScore: 34, remark: '表现良好' },
+  { id: 'b7', inmateId: '1', inmateName: '张伟', date: '2024-01-14', discipline: 8, labor: 9, study: 8, cooperation: 7, totalScore: 32, remark: '表现良好' },
+  { id: 'b8', inmateId: '2', inmateName: '李明', date: '2024-01-14', discipline: 9, labor: 10, study: 8, cooperation: 9, totalScore: 36, remark: '表现优秀' },
+  { id: 'b9', inmateId: '1', inmateName: '张伟', date: '2024-01-13', discipline: 9, labor: 7, study: 9, cooperation: 8, totalScore: 33, remark: '学习认真' },
+  { id: 'b10', inmateId: '2', inmateName: '李明', date: '2024-01-13', discipline: 10, labor: 9, study: 10, cooperation: 8, totalScore: 37, remark: '表现突出' },
 ];
 
-export const violations: Violation[] = [
+export const initialViolations: Violation[] = [
   { id: 'v1', inmateId: '7', inmateName: '孙磊', date: '2024-01-14', type: '打架斗殴', severity: '严重', description: '与同监室服刑人员发生肢体冲突', punishment: '记过处分，禁闭7天', status: '处理中' },
   { id: 'v2', inmateId: '4', inmateName: '赵强', date: '2024-01-12', type: '违反作息', severity: '轻微', description: '夜间不按时就寝，大声喧哗', punishment: '批评教育，扣2分', status: '已处理' },
   { id: 'v3', inmateId: '1', inmateName: '张伟', date: '2024-01-10', type: '劳动消极', severity: '一般', description: '劳动任务未按时完成', punishment: '口头警告，限期整改', status: '已处理' },
   { id: 'v4', inmateId: '5', inmateName: '陈静', date: '2024-01-08', type: '私藏物品', severity: '一般', description: '私藏非批准食品', punishment: '物品没收，扣3分', status: '待处理' },
 ];
 
-export const familyVisits: FamilyVisit[] = [
+export const initialFamilyVisits: FamilyVisit[] = [
   { id: 'fv1', inmateId: '1', inmateName: '张伟', visitorName: '张丽', relationship: '妹妹', visitType: '现场会见', date: '2024-01-20', timeSlot: '09:00-09:30', status: '已确认', duration: 30, room: '会见室1' },
   { id: 'fv2', inmateId: '2', inmateName: '李明', visitorName: '李父', relationship: '父亲', visitType: '视频会见', date: '2024-01-18', timeSlot: '14:00-14:30', status: '待确认', duration: 30 },
   { id: 'fv3', inmateId: '3', inmateName: '王芳', visitorName: '王强', relationship: '儿子', visitType: '现场会见', date: '2024-01-21', timeSlot: '10:00-10:40', status: '已完成', duration: 40, room: '会见室2' },
@@ -321,12 +347,17 @@ export const familyVisits: FamilyVisit[] = [
   { id: 'fv5', inmateId: '8', inmateName: '周琳', visitorName: '周明', relationship: '弟弟', visitType: '现场会见', date: '2024-01-22', timeSlot: '09:30-10:00', status: '待确认', duration: 30, room: '会见室1' },
 ];
 
-export const releaseAssessments: ReleaseAssessment[] = [
+export const initialVideoRecords: VideoRecord[] = [
+  { id: 'vr1', inmateId: '2', inmateName: '李明', visitorName: '李母', relationship: '母亲', date: '2024-01-10', startTime: '14:00', endTime: '14:28', duration: 28, notes: '家人询问改造情况，鼓励积极表现' },
+  { id: 'vr2', inmateId: '7', inmateName: '孙磊', visitorName: '孙母', relationship: '母亲', date: '2024-01-09', startTime: '15:00', endTime: '15:30', duration: 30, notes: '家属劝导遵守监规，认真改造' },
+];
+
+export const initialReleaseAssessments: ReleaseAssessment[] = [
   { id: 'ra1', inmateId: '2', inmateName: '李明', date: '2024-01-10', ideologyScore: 85, skillScore: 78, psychologyScore: 82, socialScore: 80, overallScore: 81.25, result: '合格', counselor: '张教官', suggestions: '建议加强职业技能培训，增加社会适应辅导' },
   { id: 'ra2', inmateId: '8', inmateName: '周琳', date: '2024-01-12', ideologyScore: 88, skillScore: 85, psychologyScore: 80, socialScore: 75, overallScore: 82, result: '合格', counselor: '李教官', suggestions: '财务技能较好，推荐会计相关岗位' },
 ];
 
-export const jobOpportunities: JobOpportunity[] = [
+export const initialJobOpportunities: JobOpportunity[] = [
   { id: 'j1', title: '会计助理', company: '诚信会计事务所', location: '本市', salary: '4000-5000', requirements: '有会计基础，熟练使用办公软件', matchScore: 85, skills: ['会计', '办公软件'], contact: '王经理 138****1234' },
   { id: 'j2', title: '电工学徒', company: '恒通电力工程', location: '本市', salary: '3500-4500', requirements: '有电工基础，能吃苦耐劳', matchScore: 78, skills: ['电工基础'], contact: '李工 139****5678' },
   { id: 'j3', title: '汽车维修技师', company: '速达汽修厂', location: '邻市', salary: '4500-6000', requirements: '有汽修经验，中级以上水平', matchScore: 72, skills: ['汽车维修'], contact: '陈厂长 137****9012' },
