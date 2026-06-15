@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ClipboardCheck, Award, AlertTriangle, TrendingUp, User, Calendar, Plus, Check, X } from 'lucide-react';
 import { useStore } from '@/store/useStore';
@@ -36,7 +36,7 @@ export default function Behavior() {
   const excellentCount = filteredRecords.filter((r) => r.totalScore >= 36).length;
   const violationCount = violations.length;
 
-  useMemo(() => {
+  useEffect(() => {
     if (location.state?.inmateId) {
       setFilteredInmateId(location.state.inmateId);
     }

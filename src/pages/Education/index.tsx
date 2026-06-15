@@ -167,10 +167,6 @@ export default function Education() {
     }
   };
 
-  const totalCourses = courses.length;
-  const totalHours = courses.reduce((sum, c) => sum + c.completedHours, 0);
-  const totalParticipants = courses.reduce((sum, c) => sum + c.participantCount, 0);
-
   const scheduleData = [
     { day: 0, morning: ['思想道德修养'], afternoon: ['文化课扫盲班'] },
     { day: 1, morning: ['小学数学辅导'], afternoon: ['法律基础知识'] },

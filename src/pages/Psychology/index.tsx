@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { HeartPulse, AlertTriangle, Users, Clipboard, Calendar, User, AlertCircle } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import PageHeader from '@/components/PageHeader';
@@ -14,13 +15,41 @@ const tabs = [
 ];
 
 export default function Psychology() {
-  const { assessments, crisisInterventions } = useStore();
+  const location = useLocation();
+  const { assessments, crisisInterventions, inmates } = useStore();
   const [activeTab, setActiveTab] = useState('assessment');
+  const [filteredInmateId, setFilteredInmateId] = useState<string | null>(null);
 
-  const normalCount = assessments.filter((a) => a.level === '正常').length;
-  const mildCount = assessments.filter((a) => a.level === '轻度').length;
-  const moderateCount = assessments.filter((a) => a.level === '中度').length;
-  const severeCount = assessments.filter((a) => a.level === '重度').length;
+  useEffect(() => {
+    if (location.state?.inmateId) {
+      setFilteredInmateId(location.state.inmateId);
+    }
+  }, [location.state]);
+
+  const filteredAssessments = filteredInmateId
+    ? assessments.filter((a) => a.inmateId === filteredInmateId)
+    : assessments;
+
+  const filteredCrisis = filteredInmateId
+    ? crisisInterventions.filter((c) => c.inmateId === filteredInmateId)
+    : crisisInterventions;
+
+  const consultRecords = [
+    { id: '1', inmateId: 'inmate-1', name: '张伟', date: '2024-01-15', counselor: '陈医师', type: '个体咨询', duration: '50分钟', notes: '焦虑情绪疏导，探讨改造目标' },
+    { id: '2', inmateId: 'inmate-2', name: '李明', date: '2024-01-14', counselor: '李医师', type: '团体辅导', duration: '90分钟', notes: '人际关系团体辅导' },
+    { id: '3', inmateId: 'inmate-3', name: '王芳', date: '2024-01-13', counselor: '陈医师', type: '个体咨询', duration: '60分钟', notes: '抑郁情绪干预，制定改善计划' },
+    { id: '4', inmateId: 'inmate-4', name: '赵强', date: '2024-01-12', counselor: '王医师', type: '电话咨询', duration: '30分钟', notes: '家庭关系问题咨询' },
+    { id: '5', inmateId: 'inmate-5', name: '陈静', date: '2024-01-11', counselor: '李医师', type: '个体咨询', duration: '45分钟', notes: '睡眠问题咨询，放松训练' },
+  ];
+
+  const filteredConsultRecords = filteredInmateId
+    ? consultRecords.filter((c) => c.inmateId === filteredInmateId)
+    : consultRecords;
+
+  const normalCount = filteredAssessments.filter((a) => a.level === '正常').length;
+  const mildCount = filteredAssessments.filter((a) => a.level === '轻度').length;
+  const moderateCount = filteredAssessments.filter((a) => a.level === '中度').length;
+  const severeCount = filteredAssessments.filter((a) => a.level === '重度').length;
 
   const getLevelColor = (level: string) => {
     switch (level) {
@@ -59,26 +88,35 @@ export default function Psychology() {
     { name: '服刑适应量表', description: '监狱适应状况评估', questions: 30, duration: '15-20分钟' },
   ];
 
-  const consultRecords = [
-    { name: '张伟', date: '2024-01-15', counselor: '陈医师', type: '个体咨询', duration: '50分钟', notes: '焦虑情绪疏导，探讨改造目标' },
-    { name: '李明', date: '2024-01-14', counselor: '李医师', type: '团体辅导', duration: '90分钟', notes: '人际关系团体辅导' },
-    { name: '王芳', date: '2024-01-13', counselor: '陈医师', type: '个体咨询', duration: '60分钟', notes: '抑郁情绪干预，制定改善计划' },
-    { name: '赵强', date: '2024-01-12', counselor: '王医师', type: '电话咨询', duration: '30分钟', notes: '家庭关系问题咨询' },
-    { name: '陈静', date: '2024-01-11', counselor: '李医师', type: '个体咨询', duration: '45分钟', notes: '睡眠问题咨询，放松训练' },
-  ];
-
   return (
     <div>
       <PageHeader
         title="心理评估"
         subtitle="心理健康测评、危机干预与心理咨询管理"
+        actions={
+          <div className="flex items-center gap-3">
+            {filteredInmateId && (
+              <span className="text-sm text-gray-500">
+                正在查看：{inmates.find((i) => i.id === filteredInmateId)?.name} 的心理记录
+              </span>
+            )}
+            {filteredInmateId && (
+              <button
+                onClick={() => setFilteredInmateId(null)}
+                className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                清除筛选
+              </button>
+            )}
+          </div>
+        }
       />
 
       <div className="grid grid-cols-4 gap-4 mb-6">
         <DataCard
           title="心理测评数"
-          value={assessments.length}
-          subtitle="本月测评次数"
+          value={filteredAssessments.length}
+          subtitle="测评次数"
           icon={<Clipboard className="w-5 h-5" />}
           color="blue"
         />
@@ -98,8 +136,8 @@ export default function Psychology() {
         />
         <DataCard
           title="危机事件"
-          value={crisisInterventions.length}
-          subtitle="本月干预数"
+          value={filteredCrisis.length}
+          subtitle="干预数"
           icon={<AlertCircle className="w-5 h-5" />}
           color="red"
         />
@@ -144,7 +182,7 @@ export default function Psychology() {
                     </tr>
                   </thead>
                   <tbody>
-                    {assessments.map((assessment) => (
+                    {filteredAssessments.map((assessment) => (
                       <tr key={assessment.id} className="border-b border-gray-50 last:border-0">
                         <td className="py-3">
                           <div className="flex items-center gap-2">
@@ -174,7 +212,8 @@ export default function Psychology() {
 
         {activeTab === 'crisis' && (
           <div className="mt-5 space-y-4">
-            {crisisInterventions.map((intervention) => (
+            {filteredCrisis.length > 0 ? (
+              filteredCrisis.map((intervention) => (
               <div key={intervention.id} className="p-4 border border-gray-200 rounded-lg">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -211,13 +250,17 @@ export default function Psychology() {
                   </div>
                 </div>
               </div>
-            ))}
+            ))
+            ) : (
+              <p className="text-center text-gray-400 py-8 text-sm">暂无危机干预记录</p>
+            )}
           </div>
         )}
 
         {activeTab === 'consult' && (
           <div className="mt-5 space-y-3">
-            {consultRecords.map((record, index) => (
+            {filteredConsultRecords.length > 0 ? (
+              filteredConsultRecords.map((record, index) => (
               <div key={index} className="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
@@ -238,7 +281,10 @@ export default function Psychology() {
                   {record.notes}
                 </p>
               </div>
-            ))}
+            ))
+            ) : (
+              <p className="text-center text-gray-400 py-8 text-sm">暂无咨询记录</p>
+            )}
           </div>
         )}
       </Card>
